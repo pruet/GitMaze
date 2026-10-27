@@ -54,11 +54,14 @@ class MapLoader:
             "git_commit_msg": "uncommitted changes",
         }
         try:
+            abs_path = os.path.abspath(file_path)
+            file_dir = os.path.dirname(abs_path) or "."
+            file_name = os.path.basename(abs_path)
             res = subprocess.run(
-                ["git", "log", "-1", "--format=%h|%an|%s", "--", file_path],
+                ["git", "log", "-1", "--format=%h|%an|%s", "--", file_name],
                 capture_output=True,
                 text=True,
-                cwd=os.path.dirname(os.path.abspath(file_path)) or ".",
+                cwd=file_dir,
                 timeout=3,
             )
             if res.returncode == 0 and res.stdout.strip():
