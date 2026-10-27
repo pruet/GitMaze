@@ -1,0 +1,35 @@
+name: Validate GitMaze Maps
+
+on:
+  push:
+    paths:
+      - 'levels/**'
+      - 'gitmaze/validator.py'
+      - 'gitmaze/map_loader.py'
+  pull_request:
+    paths:
+      - 'levels/**'
+      - 'gitmaze/validator.py'
+      - 'gitmaze/map_loader.py'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Map Validator
+        run: python validate_maps.py levels/
+
+      - name: Run Test Suite
+        run: python -m unittest discover tests

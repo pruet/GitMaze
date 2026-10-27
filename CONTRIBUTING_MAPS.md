@@ -1,0 +1,115 @@
+# Contributing Maps to GitMaze
+
+In **GitMaze**, the dungeon layout is entirely version-controlled in this Git repository! Anyone can:
+- **Suggest a map change / design a new room** via a **Pull Request (PR)**.
+- **Report an impossible room, trap, or bad layout** via a **GitHub Issue**.
+- Have their GitHub username and commit SHA immortalized directly inside the game HUD!
+
+---
+
+## 1. Map File Format
+
+Maps are stored as plain text files in the `levels/` directory with a `.map` extension (e.g., `levels/level_01.map`).
+
+Every map consists of:
+1. **YAML Frontmatter** (delimited by `---`) with metadata.
+2. **ASCII Grid** depicting walls, floors, doors, stairs, monsters, and items.
+
+### Example Template
+
+```text
+---
+id: level_04
+name: "The Forgotten Library"
+depth: 4
+author: "your_github_username"
+description: "A ruined library full of cursed scrolls and lurking kobolds."
+next_level: level_05
+prev_level: level_03
+---
+###############################################################################
+#                                                                             #
+#   #################                   ###################################   #
+#   #<..............#                   #..............................>..#   #
+#   #.......?.......#...................#.............k...................#   #
+#   #.......!.......#                   #......$..................$.......#   #
+#   ########+########                   #################+#################   #
+#           .                                            .                    #
+#           ..............................................                    #
+#                                                                             #
+###############################################################################
+```
+
+---
+
+## 2. Legend of Dungeon Glyphs
+
+| Glyph | Description | Walkable? | Notes |
+|:-----:|:------------|:---------:|:------|
+| `@` | **Player Start** | Yes | Required if no `<` (stairs up) is present |
+| `#` / `-` / `\|` | **Wall** | No | Blocks vision and movement |
+| `.` | **Floor / Corridor** | Yes | Walkable, allows light to pass |
+| `+` | **Closed Door** | Yes (bump to open) | Blocks vision until opened |
+| `/` | **Open Door** | Yes | Transparent |
+| `>` | **Stairs Down** | Yes | Descends to `next_level` |
+| `<` | **Stairs Up** | Yes | Ascends to `prev_level` |
+| ` ` | **Empty Rock / Void**| No | Out of bounds |
+| `$` | **Gold** | Yes | Automatically picked up |
+| `!` | **Potion** | Yes | Healing, speed, etc. |
+| `?` | **Scroll** | Yes | Teleportation, magic mapping |
+| `)` or `/`| **Weapon** | Yes | Dagger, short sword, long sword |
+| `[` | **Armor** | Yes | Leather armor, chain mail, plate |
+| `%` | **Food** | Yes | Food ration, apple, bread |
+| `d` | **Jackal** | Yes (attack) | Fast, light melee |
+| `k` | **Kobold** | Yes (attack) | Moderate melee |
+| `g` | **Goblin** | Yes (attack) | Drops weapons |
+| `o` | **Orc** | Yes (attack) | Tough brute |
+| `z` | **Zombie** | Yes (attack) | High HP |
+| `D` | **Dragon** | Yes (attack) | Boss tier |
+
+---
+
+## 3. Map Rules & Quality Checklist
+
+Before submitting a Pull Request, your map must pass the automated validator:
+1. **Connectivity**: All stairs (`>`, `<`), player spawn (`@`), and items/monsters must be reachable (no orphan rooms sealed off without doors).
+2. **Bounds**: Width between 10 and 120; Height between 5 and 60.
+3. **Surrounding Walls**: Enclose rooms with walls (`#`) so the player cannot fall into the void.
+4. **Metadata**:
+   - `id`: Unique alphanumeric ID (e.g. `level_04`).
+   - `depth`: Positive integer.
+   - `author`: Your GitHub handle (e.g. `@octocat`).
+
+---
+
+## 4. How to Test Your Map Locally
+
+1. Create or edit your map in `levels/your_level.map`.
+2. Run the validator CLI:
+   ```bash
+   python validate_maps.py
+   ```
+3. Test play your map directly in the game:
+   ```bash
+   python run_game.py --level your_level
+   ```
+4. Run the automated test suite:
+   ```bash
+   python -m unittest discover tests
+   ```
+
+---
+
+## 5. Submitting Your PR
+
+1. Fork this repository and create a branch:
+   ```bash
+   git checkout -b map/add-level-04
+   ```
+2. Commit your map:
+   ```bash
+   git add levels/level_04.map
+   git commit -m "Add Level 04: The Forgotten Library"
+   ```
+3. Push to your fork and submit a Pull Request.
+4. GitHub Actions CI will automatically run `validate_maps.py` to confirm your map passes all reachability and syntax tests!
