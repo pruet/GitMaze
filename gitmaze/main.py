@@ -112,10 +112,16 @@ def run_game(levels_dir: str = "levels", start_level: str = "level_01"):
 
 def main():
     parser = argparse.ArgumentParser(description="GitMaze - A NetHack-inspired Roguelike powered by Git maps.")
+    parser.add_argument("--gui", "-g", action="store_true", help="Launch the GUI graphical frontend")
     parser.add_argument("--level", "-l", default="level_01", help="Start level ID (default: level_01)")
     parser.add_argument("--levels-dir", "-d", default="levels", help="Directory containing map files")
     parser.add_argument("--validate", "-v", action="store_true", help="Validate all maps in the levels directory and exit")
     args = parser.parse_args()
+
+    if args.gui:
+        from .gui import start_gui
+        start_gui(levels_dir=args.levels_dir, start_level=args.level)
+        return
 
     if args.validate:
         print(f"Validating maps in '{args.levels_dir}'...")

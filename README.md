@@ -27,7 +27,16 @@
 - Python 3.10+
 - Dependencies: `pip install -r requirements.txt` (only `pyyaml` and `colorama`)
 
-### Run the Game
+### Play with GUI Frontend (Graphical Window)
+```bash
+python run_gui.py
+```
+Or via `--gui`:
+```bash
+python run_game.py --gui
+```
+
+### Play in Terminal (Classic NetHack ASCII)
 ```bash
 python run_game.py
 ```
