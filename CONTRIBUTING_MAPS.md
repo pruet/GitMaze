@@ -7,7 +7,28 @@ In **GitMaze**, the dungeon layout is entirely version-controlled in this Git re
 
 ---
 
-## 1. Map File Format
+## 1. Visual Map Editor (Recommended)
+
+You don't need to manually type ASCII grids by hand! You can use the built-in **GitMaze Map Editor**:
+
+```bash
+# Launch a new map editor
+python run_editor.py
+
+# Or edit an existing level directly
+python run_editor.py levels/level_01.map
+```
+
+### Features of the Editor:
+- **Pencil & Room Tool**: Drag to draw hollow or filled rooms and corridors.
+- **Palette**: One-click selection of walls (`#`), floors (`.`), doors (`+`/`/`), player start (`@`), stairs (`>` / `<`), monsters (`d, k, g, o, z, D`), and items (`$, !, ?, ), [, %`).
+- **Live Validator**: Built-in `✓ Validate Map` button checks connectivity and reachability in real-time.
+- **▶ Test Play Map**: Instantly opens a test game window to playtest your newly drawn dungeon before submitting.
+- **YAML Frontmatter Editor**: Modify title, depth, author handle, and description in the sidebar.
+
+---
+
+## 2. Map File Format
 
 Maps are stored as plain text files in the `levels/` directory with a `.map` extension (e.g., `levels/level_01.map`).
 

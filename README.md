@@ -27,6 +27,19 @@
 - Python 3.10+
 - Dependencies: `pip install -r requirements.txt` (only `pyyaml` and `colorama`)
 
+### Map Editor (Create & Edit Levels Visually)
+```bash
+python run_editor.py
+```
+Or open an existing level to edit:
+```bash
+python run_editor.py levels/level_01.map
+```
+Or via `--editor`:
+```bash
+python run_game.py --editor
+```
+
 ### Play with GUI Frontend (Graphical Window)
 ```bash
 python run_gui.py
