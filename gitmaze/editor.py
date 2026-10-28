@@ -514,11 +514,16 @@ class MapEditor:
             self.lbl_status.config(text="New Map Created", foreground=THEME["accent_yellow"])
 
     def action_open(self):
-        init_dir = "levels" if os.path.isdir("levels") else "."
+        init_dir = os.path.abspath("levels") if os.path.isdir("levels") else os.path.abspath(".")
         fpath = filedialog.askopenfilename(
             initialdir=init_dir,
             title="Open GitMaze Map",
-            filetypes=[("GitMaze Map Files", "*.map;*.txt"), ("All Files", "*.*")]
+            filetypes=[
+                ("GitMaze Map Files", ("*.map", "*.txt")),
+                ("GitMaze Maps (*.map)", "*.map"),
+                ("Text Maps (*.txt)", "*.txt"),
+                ("All Files", "*"),
+            ]
         )
         if fpath:
             self.load_file(fpath)
@@ -586,14 +591,18 @@ class MapEditor:
             self.save_to_file(self.current_file)
 
     def action_save_as(self):
-        init_dir = "levels" if os.path.isdir("levels") else "."
+        init_dir = os.path.abspath("levels") if os.path.isdir("levels") else os.path.abspath(".")
         default_name = f"{self.meta_id.get().strip() or 'custom_level'}.map"
         fpath = filedialog.asksaveasfilename(
             initialdir=init_dir,
             initialfile=default_name,
             title="Save GitMaze Map",
             defaultextension=".map",
-            filetypes=[("GitMaze Map Files", "*.map"), ("All Files", "*.*")]
+            filetypes=[
+                ("GitMaze Maps (*.map)", "*.map"),
+                ("Text Maps (*.txt)", "*.txt"),
+                ("All Files", "*"),
+            ]
         )
         if fpath:
             self.current_file = fpath
