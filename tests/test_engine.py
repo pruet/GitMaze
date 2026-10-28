@@ -54,14 +54,14 @@ class TestEngineMechanics(unittest.TestCase):
         self.assertIn("much better", res)
 
     def test_multiple_stairs_and_branching(self):
-        # Level 1 has 2 down exits: stairs (70, 3) -> level_02, and ladder (60, 14) -> goblin_mines_01
         self.assertEqual(len(self.engine.current_level.exits), 2)
         exits_by_char = {e.char: e for e in self.engine.current_level.exits}
         self.assertIn(">", exits_by_char)
         self.assertIn("}", exits_by_char)
 
+        ladder = exits_by_char["}"]
         # Move player to ladder } and descend
-        self.engine.player.x, self.engine.player.y = 60, 14
+        self.engine.player.x, self.engine.player.y = ladder.x, ladder.y
         self.engine.descend_stairs()
 
         # Should arrive in goblin_mines_01
@@ -72,8 +72,8 @@ class TestEngineMechanics(unittest.TestCase):
         # Climb back up ladder { to level_01
         self.engine.ascend_stairs()
         self.assertEqual(self.engine.current_level_id, "level_01")
-        self.assertEqual(self.engine.player.x, 60)
-        self.assertEqual(self.engine.player.y, 14)
+        self.assertEqual(self.engine.player.x, ladder.x)
+        self.assertEqual(self.engine.player.y, ladder.y)
 
     def test_food_nutrition(self):
         p = self.engine.player
