@@ -21,7 +21,8 @@ python run_editor.py levels/level_01.map
 
 ### Features of the Editor:
 - **Pencil & Room Tool**: Drag to draw hollow or filled rooms and corridors.
-- **Palette**: One-click selection of walls (`#`), floors (`.`), doors (`+`/`/`), player start (`@`), stairs (`>` / `<`), monsters (`d, k, g, o, z, D`), and items (`$, !, ?, ), [, %`).
+- **Palette**: One-click selection of walls (`#`), floors (`.`), doors (`+`/`/`), player start (`@`), stairs (`>` / `<`), ladders (`}` / `{`), monsters (`d, k, g, o, z, D`), and items (`$, !, ?, ), [, %`).
+- **Resize Floor**: Quick presets (`80x21 NetHack`, `60x20 Standard`, `40x15 Compact`, `100x30 Large`) and interactive zoom (`🔍 +` / `🔍 -`).
 - **Live Validator**: Built-in `✓ Validate Map` button checks connectivity and reachability in real-time.
 - **▶ Test Play Map**: Instantly opens a test game window to playtest your newly drawn dungeon before submitting.
 - **YAML Frontmatter Editor**: Modify title, depth, author handle, and description in the sidebar.
@@ -63,7 +64,7 @@ prev_level: level_03
 
 ---
 
-## 2. Legend of Dungeon Glyphs
+## 3. Legend of Dungeon Glyphs
 
 | Glyph | Description | Walkable? | Notes |
 |:-----:|:------------|:---------:|:------|
@@ -72,8 +73,8 @@ prev_level: level_03
 | `.` | **Floor / Corridor** | Yes | Walkable, allows light to pass |
 | `+` | **Closed Door** | Yes (bump to open) | Blocks vision until opened |
 | `/` | **Open Door** | Yes | Transparent |
-| `>` | **Stairs Down** | Yes | Descends to `next_level` or specific exit |
-| `<` | **Stairs Up** | Yes | Ascends to `prev_level` or specific exit |
+| `>` | **Stairs Down** | Yes | Descends to `next_level` or configured target |
+| `<` | **Stairs Up** | Yes | Ascends to `prev_level` or configured target |
 | `}` | **Ladder Down** | Yes | NetHack-style ladder descending to branch/sub-level |
 | `{` | **Ladder Up** | Yes | Ladder ascending to parent level |
 | ` ` | **Empty Rock / Void**| No | Out of bounds |
@@ -92,10 +93,40 @@ prev_level: level_03
 
 ---
 
-## 3. Map Rules & Quality Checklist
+## 4. Multiple Ladders & Dungeon Branching
+
+Floors can contain **multiple stairs and ladders** leading to separate dungeon branches or secret chambers.
+To configure destinations, define an `exits` table in your YAML frontmatter:
+
+```yaml
+---
+id: level_01
+name: "The Catacombs Entrance"
+depth: 1
+author: "octocat"
+next_level: level_02
+prev_level: null
+exits:
+  - pos: [70, 3]
+    target_level: level_02
+    label: "A grand stone staircase leading deeper into the Catacombs"
+  - pos: [60, 14]
+    target_level: goblin_mines_01
+    target_pos: [6, 3]
+    label: "An iron ladder descending into the dark Goblin Mines"
+---
+```
+
+- When standing on a stair (`>`) or ladder (`}`), the in-game log identifies it by its label.
+- Pressing `>` or `<` transitions directly to that exit's `target_level`.
+- If `target_pos` is provided, the player lands on that coordinate; otherwise the player lands on the matching reverse stair/ladder.
+
+---
+
+## 5. Map Rules & Quality Checklist
 
 Before submitting a Pull Request, your map must pass the automated validator:
-1. **Connectivity**: All stairs (`>`, `<`), player spawn (`@`), and items/monsters must be reachable (no orphan rooms sealed off without doors).
+1. **Connectivity**: All stairs (`>`, `<`, `}`, `{`), player spawn (`@`), and items/monsters must be reachable (no orphan rooms sealed off without doors).
 2. **Bounds**: Width between 10 and 120; Height between 5 and 60.
 3. **Surrounding Walls**: Enclose rooms with walls (`#`) so the player cannot fall into the void.
 4. **Metadata**:
@@ -105,7 +136,7 @@ Before submitting a Pull Request, your map must pass the automated validator:
 
 ---
 
-## 4. How to Test Your Map Locally
+## 6. How to Test Your Map Locally
 
 1. Create or edit your map in `levels/your_level.map`.
 2. Run the validator CLI:
@@ -123,7 +154,7 @@ Before submitting a Pull Request, your map must pass the automated validator:
 
 ---
 
-## 5. Submitting Your PR
+## 7. Submitting Your PR
 
 1. Fork this repository and create a branch:
    ```bash
