@@ -35,6 +35,8 @@ PALETTE = [
     ("Spawns", "@", "Player Start (@)", "#ffffff"),
     ("Spawns", ">", "Stairs Down (>)", "#61afef"),
     ("Spawns", "<", "Stairs Up (<)", "#61afef"),
+    ("Spawns", "}", "Ladder Down (})", "#e5c07b"),
+    ("Spawns", "{", "Ladder Up ({)", "#e5c07b"),
     ("Items", "$", "Gold ($)", "#e5c07b"),
     ("Items", "!", "Potion (!)", "#c678dd"),
     ("Items", "?", "Scroll (?)", "#56b6c2"),
@@ -83,6 +85,7 @@ class MapEditor:
         self.meta_desc = tk.StringVar(value="A custom chamber created with GitMaze Editor.")
         self.meta_next = tk.StringVar(value="")
         self.meta_prev = tk.StringVar(value="")
+        self.exits_config: List[Dict[str, Any]] = []
 
         self._init_styles()
         self._build_ui()
@@ -488,6 +491,8 @@ class MapEditor:
             "next_level": self.meta_next.get().strip() or None,
             "prev_level": self.meta_prev.get().strip() or None,
         }
+        if self.exits_config:
+            frontmatter["exits"] = self.exits_config
 
         yaml_str = yaml.dump(frontmatter, sort_keys=False).strip()
         lines = ["".join(row).rstrip() for row in self.grid]
@@ -577,13 +582,10 @@ class MapEditor:
             if 0 <= px < self.width and 0 <= py < self.height:
                 self.grid[py][px] = "@"
 
-            # Overlay stairs
-            if map_data.stairs_down:
-                sx, sy = map_data.stairs_down
-                self.grid[sy][sx] = ">"
-            if map_data.stairs_up:
-                ux, uy = map_data.stairs_up
-                self.grid[uy][ux] = "<"
+            # Overlay exits (stairs and ladders)
+            for ex in map_data.exits:
+                if 0 <= ex.x < self.width and 0 <= ex.y < self.height:
+                    self.grid[ex.y][ex.x] = ex.char
 
             # Overlay items
             for (ix, iy), item_list in map_data.items.items():

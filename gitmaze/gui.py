@@ -40,6 +40,8 @@ GLYPH_COLORS = {
     "/": "#e5c07b",        # Open Door
     ">": "#61afef",        # Stairs Down
     "<": "#61afef",        # Stairs Up
+    "}": "#e5c07b",        # Ladder Down
+    "{": "#e5c07b",        # Ladder Up
     "$": "#e5c07b",        # Gold
     "!": "#c678dd",        # Potion
     "?": "#56b6c2",        # Scroll

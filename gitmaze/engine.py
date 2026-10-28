@@ -1,7 +1,7 @@
 """Main Game Engine for GitMaze."""
 import os
 import random
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Any
 from .entities import Player, Monster, Fighter
 from .items import Item, Weapon, Armor, Potion, Scroll, Food, Gold
 from .map_loader import MapLoader, MapData
@@ -58,7 +58,14 @@ class GameEngine:
                 except Exception as e:
                     self.log_message(f"Warning: Failed to load map {fname}: {e}")
 
-    def switch_to_level(self, level_id: str, from_stairs: str = "down"):
+    def switch_to_level(
+        self,
+        level_id: str,
+        from_stairs: str = "down",
+        from_exit: Optional[Any] = None,
+        target_pos: Optional[Tuple[int, int]] = None,
+    ):
+        prev_level_id = self.current_level_id
         if level_id not in self.levels:
             # Try to load directly from file
             potential_file = os.path.join(self.levels_dir, f"{level_id}.map")
@@ -72,16 +79,38 @@ class GameEngine:
         self.current_level_id = level_id
         self.current_level = self.levels[level_id]
 
-        # Position player
-        if from_stairs == "start":
+        # Determine landing position
+        if target_pos:
+            self.player.x, self.player.y = target_pos
+        elif from_exit and from_exit.target_pos:
+            self.player.x, self.player.y = from_exit.target_pos
+        elif from_stairs == "start":
             self.player.x, self.player.y = self.current_level.player_start
         elif from_stairs == "down":
-            if self.current_level.stairs_up:
+            # Descended: look for an up-exit leading back to previous level
+            matching_up_exit = None
+            for ex in self.current_level.exits:
+                if ex.direction == "up" and (ex.target_level == prev_level_id or not ex.target_level):
+                    matching_up_exit = (ex.x, ex.y)
+                    break
+
+            if matching_up_exit:
+                self.player.x, self.player.y = matching_up_exit
+            elif self.current_level.stairs_up:
                 self.player.x, self.player.y = self.current_level.stairs_up
             else:
                 self.player.x, self.player.y = self.current_level.player_start
         elif from_stairs == "up":
-            if self.current_level.stairs_down:
+            # Ascended: look for a down-exit leading back to previous level
+            matching_down_exit = None
+            for ex in self.current_level.exits:
+                if ex.direction == "down" and (ex.target_level == prev_level_id or not ex.target_level):
+                    matching_down_exit = (ex.x, ex.y)
+                    break
+
+            if matching_down_exit:
+                self.player.x, self.player.y = matching_down_exit
+            elif self.current_level.stairs_down:
                 self.player.x, self.player.y = self.current_level.stairs_down
             else:
                 self.player.x, self.player.y = self.current_level.player_start
@@ -179,6 +208,12 @@ class GameEngine:
             else:
                 self.log_message(f"There are several items here ({len(items_here)} items).")
 
+        # Check if stepped on stairs or ladder
+        if pos in self.current_level.exits_by_pos:
+            ex = self.current_level.exits_by_pos[pos]
+            key_hint = "'>'" if ex.direction == "down" else "'<'"
+            self.log_message(f"There is a {ex.label.lower()} here (press {key_hint} to use).")
+
         self.end_player_turn()
 
     def pickup_item(self):
@@ -246,12 +281,22 @@ class GameEngine:
 
     def descend_stairs(self):
         pos = (self.player.x, self.player.y)
-        if self.current_level.stairs_down and pos == self.current_level.stairs_down:
+        exit_obj = self.current_level.exits_by_pos.get(pos)
+
+        if exit_obj and exit_obj.direction == "down":
+            next_id = exit_obj.target_level
+            if next_id:
+                self.switch_to_level(next_id, from_stairs="down", from_exit=exit_obj)
+            else:
+                # Reached the end!
+                self.won = True
+                self.game_over = True
+                self.log_message("*** You have retrieved the Amulet and conquered GitMaze! You Win! ***")
+        elif self.current_level.stairs_down and pos == self.current_level.stairs_down:
             next_id = self.current_level.next_level
             if next_id:
                 self.switch_to_level(next_id, from_stairs="down")
             else:
-                # Reached the end!
                 self.won = True
                 self.game_over = True
                 self.log_message("*** You have retrieved the Amulet and conquered GitMaze! You Win! ***")
@@ -260,7 +305,15 @@ class GameEngine:
 
     def ascend_stairs(self):
         pos = (self.player.x, self.player.y)
-        if self.current_level.stairs_up and pos == self.current_level.stairs_up:
+        exit_obj = self.current_level.exits_by_pos.get(pos)
+
+        if exit_obj and exit_obj.direction == "up":
+            prev_id = exit_obj.target_level
+            if prev_id:
+                self.switch_to_level(prev_id, from_stairs="up", from_exit=exit_obj)
+            else:
+                self.log_message("The entrance is sealed behind you.")
+        elif self.current_level.stairs_up and pos == self.current_level.stairs_up:
             prev_id = self.current_level.prev_level
             if prev_id:
                 self.switch_to_level(prev_id, from_stairs="up")

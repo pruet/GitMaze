@@ -20,6 +20,17 @@ class Tile:
 
 
 @dataclass
+class Exit:
+    x: int
+    y: int
+    char: str  # '>', '<', '}', '{'
+    direction: str  # 'down' or 'up'
+    target_level: Optional[str] = None
+    target_pos: Optional[Tuple[int, int]] = None
+    label: str = ""
+
+
+@dataclass
 class MapData:
     id: str
     name: str
@@ -36,6 +47,8 @@ class MapData:
     stairs_up: Optional[Tuple[int, int]]
     items: Dict[Tuple[int, int], List[Item]] = field(default_factory=dict)
     monsters: List[Monster] = field(default_factory=list)
+    exits: List[Exit] = field(default_factory=list)
+    exits_by_pos: Dict[Tuple[int, int], Exit] = field(default_factory=dict)
     git_sha: str = "local"
     git_last_author: str = "unknown"
     git_commit_msg: str = "uncommitted"
@@ -154,14 +167,18 @@ class MapLoader:
                 elif char == " ":
                     # Empty rock / void
                     tile = Tile(char=" ", walkable=False, transparent=False, color="black")
-                elif char == ">":
-                    # Stairs down
-                    tile = Tile(char=">", walkable=True, transparent=True, color="bright_white")
-                    stairs_down = (x, y)
-                elif char == "<":
-                    # Stairs up
-                    tile = Tile(char="<", walkable=True, transparent=True, color="bright_white")
-                    stairs_up = (x, y)
+                elif char in (">", "}"):
+                    # Stairs down (>) or Ladder down (})
+                    color = "bright_white" if char == ">" else "bright_yellow"
+                    tile = Tile(char=char, walkable=True, transparent=True, color=color)
+                    if stairs_down is None:
+                        stairs_down = (x, y)
+                elif char in ("<", "{"):
+                    # Stairs up (<) or Ladder up ({)
+                    color = "bright_white" if char == "<" else "bright_yellow"
+                    tile = Tile(char=char, walkable=True, transparent=True, color=color)
+                    if stairs_up is None:
+                        stairs_up = (x, y)
                 elif char == "@":
                     # Player spawn
                     tile = Tile(char=".", walkable=True, transparent=True, color="dark_gray")
@@ -202,6 +219,52 @@ class MapLoader:
                 if not found:
                     player_start = (1, 1)
 
+        # Build exits from grid and metadata
+        raw_exits = metadata.get("exits", [])
+        configured_exits_by_pos = {}
+        if isinstance(raw_exits, list):
+            for e_data in raw_exits:
+                if isinstance(e_data, dict) and "pos" in e_data:
+                    epos = tuple(e_data["pos"])
+                    configured_exits_by_pos[epos] = e_data
+
+        exits: List[Exit] = []
+        exits_by_pos: Dict[Tuple[int, int], Exit] = {}
+
+        for y in range(height):
+            for x in range(width):
+                tile_char = grid[y][x].char
+                if tile_char in (">", "}", "<", "{"):
+                    pos = (x, y)
+                    is_down = tile_char in (">", "}")
+                    direction = "down" if is_down else "up"
+                    cfg = configured_exits_by_pos.get(pos, {})
+
+                    default_target = next_level if is_down else prev_level
+                    target_lvl = cfg.get("target_level", cfg.get("dest", default_target))
+                    target_pos_raw = cfg.get("target_pos")
+                    target_pos = tuple(target_pos_raw) if target_pos_raw else None
+
+                    default_label = (
+                        "Stairs down" if tile_char == ">"
+                        else "Ladder down" if tile_char == "}"
+                        else "Stairs up" if tile_char == "<"
+                        else "Ladder up"
+                    )
+                    label = cfg.get("label", default_label)
+
+                    exit_obj = Exit(
+                        x=x,
+                        y=y,
+                        char=tile_char,
+                        direction=direction,
+                        target_level=target_lvl,
+                        target_pos=target_pos,
+                        label=label,
+                    )
+                    exits.append(exit_obj)
+                    exits_by_pos[pos] = exit_obj
+
         git_info = cls.get_git_info(file_path) if file_path else {}
 
         return MapData(
@@ -220,6 +283,8 @@ class MapLoader:
             stairs_up=stairs_up,
             items=items,
             monsters=monsters,
+            exits=exits,
+            exits_by_pos=exits_by_pos,
             git_sha=git_info.get("git_sha", "local"),
             git_last_author=git_info.get("git_last_author", author),
             git_commit_msg=git_info.get("git_commit_msg", "none"),

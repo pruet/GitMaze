@@ -78,20 +78,30 @@ class MapValidator:
         elif not map_data.grid[start_y][start_x].walkable:
             issues.append(ValidationError(level_id, f"Player start ({start_x}, {start_y}) is on unwalkable tile", pos=(start_x, start_y)))
 
-        # 5. Reachability check using BFS
+        # 5. Reachability check using BFS for all exits (stairs & ladders)
         walkable_from_start = cls._flood_fill(map_data, start_x, start_y)
 
-        if map_data.stairs_down:
-            sx, sy = map_data.stairs_down
-            if (sx, sy) not in walkable_from_start:
-                issues.append(ValidationError(level_id, f"Stairs down (>) at ({sx}, {sy}) are unreachable from player start ({start_x}, {start_y})", pos=(sx, sy)))
-        elif map_data.next_level:
-            issues.append(ValidationError(level_id, f"Level specifies next_level='{map_data.next_level}' but has no stairs down (>)"))
+        has_down_exit = False
+        has_up_exit = False
 
-        if map_data.stairs_up:
-            ux, uy = map_data.stairs_up
-            if (ux, uy) not in walkable_from_start:
-                issues.append(ValidationError(level_id, f"Stairs up (<) at ({ux}, {uy}) are unreachable from player start", pos=(ux, uy)))
+        for ex in map_data.exits:
+            pos = (ex.x, ex.y)
+            if ex.direction == "down":
+                has_down_exit = True
+            elif ex.direction == "up":
+                has_up_exit = True
+
+            if pos not in walkable_from_start:
+                issues.append(
+                    ValidationError(
+                        level_id,
+                        f"{ex.label} ('{ex.char}') at {pos} is unreachable from player start ({start_x}, {start_y})",
+                        pos=pos,
+                    )
+                )
+
+        if not has_down_exit and map_data.next_level:
+            issues.append(ValidationError(level_id, f"Level specifies next_level='{map_data.next_level}' but has no down stairs or ladders ('>' or '}}')"))
 
         # 6. Entity placement reachability
         for (ix, iy), item_list in map_data.items.items():

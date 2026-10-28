@@ -72,8 +72,10 @@ prev_level: level_03
 | `.` | **Floor / Corridor** | Yes | Walkable, allows light to pass |
 | `+` | **Closed Door** | Yes (bump to open) | Blocks vision until opened |
 | `/` | **Open Door** | Yes | Transparent |
-| `>` | **Stairs Down** | Yes | Descends to `next_level` |
-| `<` | **Stairs Up** | Yes | Ascends to `prev_level` |
+| `>` | **Stairs Down** | Yes | Descends to `next_level` or specific exit |
+| `<` | **Stairs Up** | Yes | Ascends to `prev_level` or specific exit |
+| `}` | **Ladder Down** | Yes | NetHack-style ladder descending to branch/sub-level |
+| `{` | **Ladder Up** | Yes | Ladder ascending to parent level |
 | ` ` | **Empty Rock / Void**| No | Out of bounds |
 | `$` | **Gold** | Yes | Automatically picked up |
 | `!` | **Potion** | Yes | Healing, speed, etc. |
