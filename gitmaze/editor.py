@@ -541,11 +541,11 @@ class MapEditor:
         fpath = filedialog.askopenfilename(
             initialdir=init_dir,
             title="Open GitMaze Map",
+            defaultextension=".map",
             filetypes=[
-                ("GitMaze Map Files", ("*.map", "*.txt")),
-                ("GitMaze Maps (*.map)", "*.map"),
-                ("Text Maps (*.txt)", "*.txt"),
-                ("All Files", "*"),
+                ("GitMaze Map Files (*.map)", "*.map"),
+                ("All Files (*)", "*"),
+                ("Text Files (*.txt)", "*.txt"),
             ]
         )
         if fpath:
