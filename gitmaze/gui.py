@@ -117,6 +117,13 @@ class GitMazeGUI:
         btn_restart = ttk.Button(toolbar, text="Restart", style="Game.TButton", command=self.restart_game)
         btn_restart.pack(side=tk.RIGHT, padx=3)
 
+        # Zoom controls
+        ttk.Separator(toolbar, orient=tk.VERTICAL).pack(side=tk.RIGHT, fill=tk.Y, padx=6)
+        btn_zoom_in = ttk.Button(toolbar, text="🔍 +", width=3, style="Game.TButton", command=self.zoom_in)
+        btn_zoom_in.pack(side=tk.RIGHT, padx=1)
+        btn_zoom_out = ttk.Button(toolbar, text="🔍 -", width=3, style="Game.TButton", command=self.zoom_out)
+        btn_zoom_out.pack(side=tk.RIGHT, padx=1)
+
         # Main horizontal split: Dungeon Canvas (Left) + Sidebar (Right)
         main_frame = tk.Frame(self.root, bg=THEME["bg"])
         main_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
@@ -241,11 +248,25 @@ class GitMazeGUI:
         btn_up = ttk.Button(stair_frame, text="Up Stairs (<)", style="Game.TButton", command=self.action_up)
         btn_up.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=1)
 
+    def zoom_in(self):
+        if self.cell_size < 40:
+            self.cell_size += 2
+            self.render_dungeon()
+
+    def zoom_out(self):
+        if self.cell_size > 10:
+            self.cell_size -= 2
+            self.render_dungeon()
+
     def _bind_events(self):
         # Keyboard bindings
         self.root.bind("<KeyPress>", self.handle_keypress)
         # Mouse click on canvas for movement / targeting
         self.canvas.bind("<Button-1>", self.handle_canvas_click)
+        # Mouse wheel zoom with Ctrl
+        self.canvas.bind("<MouseWheel>", lambda e: self.zoom_in() if e.delta > 0 else self.zoom_out())
+        self.canvas.bind("<Button-4>", lambda e: self.zoom_in())
+        self.canvas.bind("<Button-5>", lambda e: self.zoom_out())
         # Resize event
         self.canvas.bind("<Configure>", lambda e: self.render_dungeon())
 

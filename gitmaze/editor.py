@@ -123,6 +123,18 @@ class MapEditor:
         btn_saveas = ttk.Button(top_bar, text="Save As...", style="Tool.TButton", command=self.action_save_as)
         btn_saveas.pack(side=tk.LEFT, padx=3)
 
+        btn_resize_top = ttk.Button(top_bar, text="Resize Floor...", style="Tool.TButton", command=self.action_resize)
+        btn_resize_top.pack(side=tk.LEFT, padx=3)
+
+        # Zoom Controls
+        ttk.Separator(top_bar, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=6)
+        btn_zoom_out = ttk.Button(top_bar, text="🔍 -", width=3, style="Tool.TButton", command=self.zoom_out)
+        btn_zoom_out.pack(side=tk.LEFT, padx=1)
+        self.lbl_zoom = ttk.Label(top_bar, text="100%", width=5, font=(self.font_family, 8))
+        self.lbl_zoom.pack(side=tk.LEFT, padx=2)
+        btn_zoom_in = ttk.Button(top_bar, text="🔍 +", width=3, style="Tool.TButton", command=self.zoom_in)
+        btn_zoom_in.pack(side=tk.LEFT, padx=1)
+
         # Right side actions: Validate & Test Play
         btn_play = ttk.Button(top_bar, text="▶ Test Play Map", style="Tool.TButton", command=self.action_test_play)
         btn_play.pack(side=tk.RIGHT, padx=4)
@@ -272,7 +284,13 @@ class MapEditor:
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
         self.canvas.bind("<Button-3>", self.on_canvas_right_click)
         self.canvas.bind("<Motion>", self.on_canvas_motion)
+        self.canvas.bind("<MouseWheel>", self.on_mousewheel)  # Windows / macOS
+        self.canvas.bind("<Button-4>", self.on_mousewheel)    # Linux scroll up
+        self.canvas.bind("<Button-5>", self.on_mousewheel)    # Linux scroll down
         self.root.bind("<Control-s>", lambda e: self.action_save())
+        self.root.bind("<Control-plus>", lambda e: self.zoom_in())
+        self.root.bind("<Control-equal>", lambda e: self.zoom_in())
+        self.root.bind("<Control-minus>", lambda e: self.zoom_out())
 
     def set_tool(self, tool_name: str):
         self.current_tool = tool_name
@@ -619,22 +637,63 @@ class MapEditor:
         except Exception as e:
             messagebox.showerror("Error Saving", str(e))
 
+    def zoom_in(self):
+        if self.cell_size < 40:
+            self.cell_size += 2
+            self.lbl_zoom.config(text=f"{int(self.cell_size / 20 * 100)}%")
+            self.redraw()
+
+    def zoom_out(self):
+        if self.cell_size > 10:
+            self.cell_size -= 2
+            self.lbl_zoom.config(text=f"{int(self.cell_size / 20 * 100)}%")
+            self.redraw()
+
+    def on_mousewheel(self, event):
+        # Ctrl + Wheel zooms
+        if event.state & 0x0004 or event.state & 4:  # Control key pressed
+            if event.delta > 0 or event.num == 4:
+                self.zoom_in()
+            else:
+                self.zoom_out()
+
     def action_resize(self):
         dialog = tk.Toplevel(self.root)
-        dialog.title("Resize Map Grid")
-        dialog.geometry("260x140")
+        dialog.title("Resize Floor & Grid")
+        dialog.geometry("340x260")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Width (10 - 120):").grid(row=0, column=0, padx=8, pady=6, sticky=tk.W)
-        w_ent = ttk.Entry(dialog, width=8)
-        w_ent.insert(0, str(self.width))
-        w_ent.grid(row=0, column=1, padx=8, pady=6)
+        ttk.Label(dialog, text="Floor Dimensions (Tiles)", font=(self.font_family, 10, "bold"), foreground=THEME["accent_blue"]).pack(anchor=tk.W, padx=12, pady=(10, 6))
 
-        ttk.Label(dialog, text="Height (5 - 60):").grid(row=1, column=0, padx=8, pady=6, sticky=tk.W)
-        h_ent = ttk.Entry(dialog, width=8)
+        inputs_frame = ttk.Frame(dialog)
+        inputs_frame.pack(fill=tk.X, padx=12, pady=4)
+
+        ttk.Label(inputs_frame, text="Width (10 - 120):").grid(row=0, column=0, sticky=tk.W, pady=4)
+        w_ent = ttk.Entry(inputs_frame, width=8)
+        w_ent.insert(0, str(self.width))
+        w_ent.grid(row=0, column=1, padx=8, pady=4)
+
+        ttk.Label(inputs_frame, text="Height (5 - 60):").grid(row=1, column=0, sticky=tk.W, pady=4)
+        h_ent = ttk.Entry(inputs_frame, width=8)
         h_ent.insert(0, str(self.height))
-        h_ent.grid(row=1, column=1, padx=8, pady=6)
+        h_ent.grid(row=1, column=1, padx=8, pady=4)
+
+        # Quick Presets
+        ttk.Label(dialog, text="Quick Presets:").pack(anchor=tk.W, padx=12, pady=(8, 2))
+        preset_frame = ttk.Frame(dialog)
+        preset_frame.pack(fill=tk.X, padx=12, pady=2)
+
+        def set_preset(w, h):
+            w_ent.delete(0, tk.END)
+            w_ent.insert(0, str(w))
+            h_ent.delete(0, tk.END)
+            h_ent.insert(0, str(h))
+
+        ttk.Button(preset_frame, text="80x21 (NetHack)", style="Tool.TButton", command=lambda: set_preset(80, 21)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(preset_frame, text="60x20 (Standard)", style="Tool.TButton", command=lambda: set_preset(60, 20)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(preset_frame, text="40x15 (Compact)", style="Tool.TButton", command=lambda: set_preset(40, 15)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(preset_frame, text="100x30 (Large)", style="Tool.TButton", command=lambda: set_preset(100, 30)).pack(side=tk.LEFT, padx=2)
 
         def apply_resize():
             try:
@@ -654,11 +713,15 @@ class MapEditor:
                 self.grid = new_grid
                 self.lbl_dims.config(text=f"{self.width} x {self.height}")
                 self.redraw()
+                self.action_validate()
                 dialog.destroy()
             except Exception as e:
                 messagebox.showerror("Invalid Size", str(e))
 
-        ttk.Button(dialog, text="Apply", command=apply_resize).grid(row=2, column=0, columnspan=2, pady=10)
+        btn_box = ttk.Frame(dialog)
+        btn_box.pack(fill=tk.X, padx=12, pady=14)
+        ttk.Button(btn_box, text="Apply Size", command=apply_resize).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(btn_box, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=4)
 
     def action_test_play(self):
         """Save to temporary file and launch test play."""
