@@ -64,10 +64,11 @@ class TestEngineMechanics(unittest.TestCase):
         self.engine.player.x, self.engine.player.y = ladder.x, ladder.y
         self.engine.descend_stairs()
 
-        # Should arrive in goblin_mines_01
+        # Should arrive in goblin_mines_01 at the ladder up position
         self.assertEqual(self.engine.current_level_id, "goblin_mines_01")
-        self.assertEqual(self.engine.player.x, 6)
-        self.assertEqual(self.engine.player.y, 3)
+        mines_ladder = {e.char: e for e in self.engine.current_level.exits}["{"]
+        self.assertEqual(self.engine.player.x, mines_ladder.x)
+        self.assertEqual(self.engine.player.y, mines_ladder.y)
 
         # Climb back up ladder { to level_01
         self.engine.ascend_stairs()
